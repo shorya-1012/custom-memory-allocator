@@ -1,9 +1,11 @@
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/mman.h>
 
-#define HEAP_CAPACITY 640000
-#define ALLOC_CAPACITY 1080
+#define PAGE_SIZE 4096
+#define ALLOC_CAPACITY 1000
+#define DEFAULT_ALIGNMENT 8
 void *heap = NULL;
 
 typedef struct {
@@ -16,11 +18,11 @@ typedef struct {
   size_t size;
 } Chunk_List;
 
-Chunk_List alloced_chunks = {.list = {NULL}, .size = 0};
+Chunk_List alloced_chunks = {.size = 0};
 Chunk_List free_chunks = {};
 
 void *heap_init() {
-  void *new_h = mmap(NULL, HEAP_CAPACITY, PROT_READ | PROT_WRITE,
+  void *new_h = mmap(NULL, PAGE_SIZE, PROT_READ | PROT_WRITE,
                      MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
   if (new_h == (void *)-1) {
     fprintf(stderr, "HEAP INITIALIZATION FAILED");
@@ -28,7 +30,7 @@ void *heap_init() {
   }
   free_chunks.size = 1;
   free_chunks.list[0].start = new_h;
-  free_chunks.list[0].size = HEAP_CAPACITY;
+  free_chunks.list[0].size = PAGE_SIZE;
   return new_h;
 }
 
@@ -78,7 +80,7 @@ int find_ptr(Chunk_List *list, void *ptr) {
 }
 void display_chunk_list(Chunk_List *list) {
   printf("In list : %zu \n", list->size);
-  for (int i = 0; i < list->size; i++) {
+  for (size_t i = 0; i < list->size; i++) {
     printf("size : %zu , address : %p\n", list->list[i].size,
            list->list[i].start);
   }
@@ -104,6 +106,15 @@ void merge_free_chunks() {
   free_chunks.size = temp.size;
 }
 
+uintptr_t align_forward(uintptr_t ptr, uintptr_t align) {
+  uintptr_t p = (uintptr_t)ptr;
+  uintptr_t rem = p % align;
+  if (rem != 0) {
+    p = p + align - rem;
+  }
+  return p;
+}
+
 void *mem_alloc(size_t size) {
   if (heap == NULL) {
     heap = heap_init();
@@ -118,12 +129,15 @@ void *mem_alloc(size_t size) {
     if (free_chunk.size < size) {
       continue;
     }
+    uintptr_t unaligned_ptr = (uintptr_t)free_chunk.start + size;
+    uintptr_t aligned_ptr = align_forward(unaligned_ptr, DEFAULT_ALIGNMENT);
+    size_t aligned_size = aligned_ptr - (uintptr_t)free_chunk.start;
     new_alloc_chunk.start = free_chunk.start;
-    new_alloc_chunk.size = size;
+    new_alloc_chunk.size = aligned_size;
     insert_chunk(&alloced_chunks, &new_alloc_chunk);
-    int diff = free_chunk.size - size;
+    int diff = free_chunk.size - aligned_size;
     if (diff > 0) {
-      Chunk new_free_chunk = {.start = free_chunk.start + size,
+      Chunk new_free_chunk = {.start = free_chunk.start + aligned_size,
                               .size = (size_t)diff};
       insert_chunk(&free_chunks, &new_free_chunk);
     }
@@ -151,7 +165,7 @@ void mem_free(void *ptr) {
   merge_free_chunks();
 }
 
-int main(int argc, char *argv[]) {
+int main() {
   for (int i = 1; i <= 10; i++) {
     void *p = mem_alloc(i);
     if (i % 2 == 0) {

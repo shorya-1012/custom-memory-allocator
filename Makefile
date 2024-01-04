@@ -1,7 +1,9 @@
 $(CC) = clang
 
-heap : heap.c
-	$(CC) heap.c -o heap -g
+CFLAGS =-Wall -Wextra -g 
 
-clean : 
+heap: heap.c
+	$(CC) $(CFLAGS) heap.c -o heap
+
+clean:
 	rm *.o heap
