@@ -87,23 +87,18 @@ void display_chunk_list(Chunk_List *list) {
 }
 
 void merge_free_chunks() {
-  Chunk_List temp = {.size = 0};
-  temp.list[temp.size++] = free_chunks.list[0];
-  for (size_t i = 1; i < free_chunks.size; i++) {
-    Chunk *temp_top_chunk = &temp.list[temp.size - 1];
-    Chunk *curr_free_chunk = &free_chunks.list[i];
-    if (temp_top_chunk->start + temp_top_chunk->size ==
-        curr_free_chunk->start) {
-      temp_top_chunk->size += curr_free_chunk->size;
+  size_t write_index = 1;
+  for (size_t i = 0; i < free_chunks.size; i++) {
+    Chunk *prev_merged_chunk = &free_chunks.list[write_index - 1];
+    Chunk *current_chunk = &free_chunks.list[i];
+    if (prev_merged_chunk->start + prev_merged_chunk->size ==
+        current_chunk->start) {
+      prev_merged_chunk->size += current_chunk->size;
     } else {
-      temp.list[temp.size++] = *curr_free_chunk;
+      free_chunks.list[write_index++] = *current_chunk;
     }
   }
-  // copy temp into free_chunks
-  for (size_t j = 0; j < temp.size; j++) {
-    free_chunks.list[j] = temp.list[j];
-  }
-  free_chunks.size = temp.size;
+  free_chunks.size = write_index;
 }
 
 uintptr_t align_forward(uintptr_t ptr, uintptr_t align) {
