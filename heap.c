@@ -88,7 +88,7 @@ void display_chunk_list(Chunk_List *list) {
 
 void merge_free_chunks() {
   size_t write_index = 1;
-  for (size_t i = 0; i < free_chunks.size; i++) {
+  for (size_t i = 1; i < free_chunks.size; i++) {
     Chunk *prev_merged_chunk = &free_chunks.list[write_index - 1];
     Chunk *current_chunk = &free_chunks.list[i];
     if (prev_merged_chunk->start + prev_merged_chunk->size ==
