@@ -32,3 +32,4 @@ This repository contains my implementation of the `malloc()` function in C. Plea
 
 1. Only works on systems that have the `mmap()` system call
 2. Not thread safe
+3. Max heap size of 4096 bytes
