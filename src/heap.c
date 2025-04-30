@@ -1,22 +1,10 @@
+#include "heap.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/mman.h>
 
-#define PAGE_SIZE 4096
-#define ALLOC_CAPACITY 1000
-#define DEFAULT_ALIGNMENT 8
 void *heap = NULL;
-
-typedef struct {
-  void *start;
-  size_t size;
-} Chunk;
-
-typedef struct {
-  Chunk list[ALLOC_CAPACITY];
-  size_t size;
-} Chunk_List;
 
 Chunk_List alloced_chunks = {.size = 0};
 Chunk_List free_chunks = {};
@@ -114,7 +102,7 @@ void *mem_alloc(size_t size) {
   if (heap == NULL) {
     heap = heap_init();
   }
-  if (size == 0)
+  if (size <= 0)
     return NULL;
 
   Chunk free_chunk;
@@ -158,16 +146,4 @@ void mem_free(void *ptr) {
   insert_chunk(&free_chunks, &chunk);
   remove_chunk(&alloced_chunks, index);
   merge_free_chunks();
-}
-
-int main() {
-  for (int i = 1; i <= 10; i++) {
-    void *p = mem_alloc(i);
-    if (i % 2 == 0) {
-      mem_free(p);
-    }
-  }
-  display_chunk_list(&alloced_chunks);
-  display_chunk_list(&free_chunks);
-  return 0;
 }

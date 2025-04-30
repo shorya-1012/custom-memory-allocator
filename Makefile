@@ -1,9 +1,16 @@
-$(CC) = clang
+CC = gcc
+CFLAGS = -Wall -Wextra -g
+SRC_DIR = src
+OBJ_DIR = obj
+BIN = heap
 
-CFLAGS =-Wall -Wextra -g 
+SRCS = $(SRC_DIR)/heap.c $(SRC_DIR)/main.c
+OBJS = $(SRCS:.c=.o)
 
-heap: heap.c
-	$(CC) $(CFLAGS) heap.c -o heap
+$(BIN): $(SRCS)
+	$(CC) $(CFLAGS) $(SRCS) -o $(BIN)
 
 clean:
-	rm *.o heap
+	rm -f $(BIN)
+
+
